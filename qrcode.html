@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link rel="stylesheet" href="/qr_style.css">
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+<script type="text/javascript" src="qrcode.js"></script>
+<script type="text/javascript" src="http://jsgetip.appspot.com/?getip"></script>
+<script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <div class="wrapper">
+    <div id="text"><h2> QR코드를 인식해 주세요.</h2> </div>
+    <img id="computerImg" src="computer.png">
+    <div id="qrcode"></div>
+  </div>
+  <button type="button" class="btn" style="position:absolute; left:700px; top:780px; z-index:20;"> <a href="http://192.168.187.74:3002/main">SKIP </a></button>
+</body>
+
+<script type="text/javascript">
+
+var qrcode = new QRCode("qrcode");
+var roomId ;
+
+
+//qrcode 생성하기 생성값은 현재 cpu시간 더하기 현재 컴퓨터 ip 주소
+function makeCode () {
+    var cpuTime = new Date().getTime() ;
+    roomId = getip() + cpuTime.toString() ;
+    qrcode.makeCode(roomId);
+}
+
+makeCode();
+
+
+//session에 현재 cpu시간 더하기 현재 컴퓨터 ip 주소를 저장한다.
+if (window.sessionStorage) {
+    sessionStorage.setItem('qr_code_id', roomId);
+}
+
+$(function() {
+  // socket.io 서버에 접속한다
+  var socket = io();
+
+  // 서버로 자신의 정보를 전송한다.
+  socket.emit("join", {
+    roomid : roomId
+  });
+
+  // // 서버로부터의 join_num이 수신되고 join수가 2명이면 main페이지로 이동한다.
+  socket.on("join_num", function(data) {
+    console.log('join_num : ' + data.join_num) ;
+    if(data.join_num == 2) {
+      location.href="/main" ;
+       }
+    });
+});
+
+</script>
+
+</html>

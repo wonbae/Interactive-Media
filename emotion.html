@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" type="text/css" href="emotion.css">
+  <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+  <link href="http://vjs.zencdn.net/6.2.0/video-js.css" rel="stylesheet">
+  <script src="http://vjs.zencdn.net/6.2.0/video.js"></script>
+  <!-- If you'd like to support IE8 -->
+  <script src="http://vjs.zencdn.net/ie8/1.1.2/videojs-ie8.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+  <title>Emotion Page</title>
+</head>
+
+<body>
+  <div class="emotion_div">
+    나비효과
+    <video id="emotion_video" class="video-js" controls preload="auto" data-setup="{}" autoplay>
+      <source id="emo_StartStory" src="emo_StartStory.mp4" type='video/mp4'>
+      <source id="emo_HappyEnding" src="emo_HappyEnding.mp4" type='video/mp4'>
+      <source id="emo_SadEnding" src="emo_SadEnding.mp4" type='video/mp4'>
+      <source id="emo_BadEnding" src="emo_BadEnding.mp4" type='video/mp4'>
+      <p class="vjs-no-js">
+        To view this video please enable JavaScript, and consider upgrading to a web browser that
+        <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+      </p>
+    </video>
+
+    <div id="text"></div>
+
+    <canvas id="myCanvas" width="1280px" height="720px" style="top: 0; left: 0; background-color: rgba( 0, 0, 0, 1.0 ); position:absolute; z-index: -1;">
+    </canvas>
+  </div>
+
+  <button type="button" class="btn" style="position:absolute; left:600px; top:740px;"> <a href="http://192.168.187.74:3002/main">MAIN </a></button>
+
+  <script src="/socket.io/socket.io.js"></script>
+
+  <script type="text/javascript">
+
+    var room_id = sessionStorage.getItem('qr_code_id');
+    var emontionVideo = document.getElementById("emotion_video");
+    var div_text = document.getElementById("text");
+    var myCanvas = document.getElementById('myCanvas');
+    var ctx = myCanvas.getContext('2d');
+    //감정상태를 받을 변수
+    var emotionState = "";
+    // var emotionRates = 0;
+
+    // socket.io 서버에 접속한다
+    var socket = io();
+
+    //미디어 재생이 종료되었을때 발생하는 이벤트 처리
+    emontionVideo.addEventListener("ended",sendEmoInfo,false)
+
+    //시작영상이 재생된 상태라면
+    //안내 text출력, getEmotion()호출
+    function sendEmoInfo(e){
+      if($(emontionVideo).attr('src')=="emo_StartStory.mp4"){
+        myCanvas.style.zIndex="1";
+        ctx.font = '30px 궁서';
+        ctx.fillStyle = "white";
+        ctx.fillText('자신의 감정이 드러나는 셀프카메라를 찍어주세요.', $("#emotion_video").width()/5+40, $("#emotion_video").height()/2-50);
+        ctx.fillText('기쁘면 슬픈결말, 슬프면 기쁜결말이 보여집니다.', $("#emotion_video").width()/5+40, $("#emotion_video").height()/2+50);
+
+        getEmotion();
+      }
+
+    }
+
+    function getEmotion(){
+
+      //서버로 room 정보 전송
+      socket.emit("join", {
+        roomid: room_id
+      });
+
+      //서버로 인터렉션 정보(interactionID) 전송
+      socket.emit("emotion");
+
+      //서버에서 정보 받기
+      socket.on("sensor", function(data) {
+        //감정 상태 받기
+        emotionState = data.emotion;
+        // emotionRates = data.emotion_percent;
+        // console.log(emotionState + " / " + emotionRates);
+        myCanvas.style.zIndex="-1";
+
+        //슬픈 감정일때 결말을 해피앤딩으로 보여줌
+        if(emotionState == "sadness"){
+          console.log("슬픔-해피앤딩");
+          emontionVideo.src="/emo_HappyEnding.mp4";
+          emontionVideo.autoplay=true;
+          emontionVideo.load();
+          div_text.innerHTML ="너무 슬퍼하지 마세요 해피앤딩입니다.";
+        }
+
+        //행복한 감정일때 결말을 나쁜앤딩으로 보여줌
+        else if(emotionState == "happiness"){
+          emontionVideo.src="/emo_BadEnding.mp4";
+          emontionVideo.autoplay=true;
+          emontionVideo.load();
+          div_text.innerHTML ="아직은 기뻐하지 마세요 슬픈앤딩입니다.";
+        }
+
+        //기타 감정 또는 감정인식이 되지 않았을때 결말을 기본앤딩으로 보여줌
+        else{
+          emontionVideo.src="/emo_SadEnding.mp4";
+          emontionVideo.autoplay=true;
+          emontionVideo.load();
+          div_text.innerHTML ="감정이 인식되지 않아 기본 흐름으로 넘어갑니다.";
+        }
+      });
+    }
+
+  </script>
+
+</body>
+</html>

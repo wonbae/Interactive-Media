@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="foggy.css">
+    <script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <link href="http://vjs.zencdn.net/6.2.0/video-js.css" rel="stylesheet">
+    <script src="http://vjs.zencdn.net/6.2.0/video.js"></script>
+    <!-- If you'd like to support IE8 -->
+    <script src="http://vjs.zencdn.net/ie8/1.1.2/videojs-ie8.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <title>video</title>
+  </head>
+
+  <body>
+    <div class="wrapper_div">
+      <div class="container">
+        <video id="myvideo" class="video-js" controls preload="auto" data-setup="{}" autoplay>
+          <source src="spaceship.mp4" type='video/mp4'>
+          <p class="vjs-no-js">
+            To view this video please enable JavaScript, and consider upgrading to a web browser that
+            <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+          </p>
+        </video>
+        <!-- <canvas id="canvas_t" width="1280" height="685"></canvas> -->
+        <canvas id="canvas_t" ></canvas>
+        <canvas id="textCanvas" width="1280px" height="720px" style="background-color: rgba( 0, 0, 0, 1.0 ); position:absolute; z-index: -1;"> </canvas>
+      </div>
+      <!-- <div class="btn">
+        <input id="playBtn" type="button" name="play" value="재생/정지" onclick="play();">
+        <input id="fogBtn" type="button" name="fog" value="fog" onclick="foggy();">
+        <div id="playtime"></div>
+      </div> -->
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script type="text/javascript">
+
+      var room_id = sessionStorage.getItem('qr_code_id');
+
+      //비디오(myvideo) element 저장
+      var videocontrol = document.getElementById("myvideo");
+      //캔버스(canvas_t) element 저장
+      var topCanvas = document.getElementById("canvas_t");
+      var topCtx = topCanvas.getContext("2d");
+      //text를 나타내기위한 캔버스(textCanvas) element 저장
+      var textCanvas = document.getElementById('textCanvas');
+      var ctx = textCanvas.getContext('2d');
+
+      // socket.io 서버에 접속한다
+      var socket = io() ;
+
+      //영상의 현재시간를 담을 변수
+      var ctime;
+
+      //flag 변수들
+      var fogAct_flag = false;
+      var fog_flag = false;
+      var clear_flag = false;
+      var mic_flag = false;
+      var fullScreen_flag = false;
+
+      var video_js = videojs('myvideo');
+
+      //영상이 멈추는(인터렉션이 나타나는)시간 (단위 : 초)
+      var stoptime = 20;
+      //영상효과가 지워진 영역의 크기를 퍼센트(%)로 담을 변수
+      var percentage = 0;
+      /*
+      //마우스 좌표를 받아올 변수
+      var mouse = {
+        x: 0, y: 0
+      };
+       */
+
+      //캔버스의 크기를 video크기와 맞춤
+      topCanvas.width = $("#myvideo").width();
+      topCanvas.height = $("#myvideo").height() -30 ;
+
+      //재생중에 지속적으로 영상의 현재시간을 구함
+      videocontrol.addEventListener("timeupdate", function(){
+        ctime = Math.floor(videocontrol.currentTime);
+      }, false);
+
+      videocontrol.addEventListener("timeupdate",fogAct,false);
+
+      video_js.on('fullscreenchange', function() {resize();});
+
+      //mousemove EventListener
+      // topCanvas.addEventListener("mousemove", clear, false);
+      // videocontrol.addEventListener("timeupdate",PlayTime,false);
+
+      /*
+      //비디오 재생, 정지
+      function play(){
+        if(videocontrol.paused) {
+          videocontrol.play();
+        }
+        else {
+          videocontrol.pause();
+        }
+      }
+
+      //비디오 재생시간을 구함
+      function PlayTime(e){
+        document.getElementById("playtime").innerHTML =
+        "재생 상태 : " + Math.floor(videocontrol.currentTime) + "/"
+                      + Math.floor(videocontrol.duration);
+      }
+      */
+
+      /*
+      //마우스 사용 시 사용되는 함수들
+      //마우스의 위치를 알아냄
+      function getPosition(event){
+        if (event.x != undefined && event.y != undefined) {
+          mouse.x = event.x;
+          mouse.y = event.y;
+        }
+      };
+
+      //마우스의 위치에 해당하는 부분의 안개효과를 지움
+      function clear(e){
+        getPosition(event);
+        topCtx.clearRect(mouse.x-25, mouse.y-25, 100, 100);
+      }
+      */
+
+      //특정시간(stoptime)에 도달하면 sendInterInfo()호출, 영상정지, sensor()호출
+      function fogAct(e){
+        if(ctime == stoptime){
+          if (fogAct_flag == false) {
+            fogAct_flag = true;
+            sendInterInfo();
+            videocontrol.pause();
+            sensor();
+          }
+        }else{
+          fogAct_flag = false;
+        }
+      }
+
+      //
+      function foggy(){
+        if (fog_flag == false) {
+          //fogimg : 안개효과를 나타낼 이미지 담기
+          var fogimg = new Image();
+          fogimg.src = 'fog.jpg';
+
+          //이미지를 로드함
+          fogimg.onload = function(){
+            //이미지 투명도 설정
+            topCtx.globalAlpha=0.7;
+            //이미지, 이미지위치, 이미지크기 설정
+            topCtx.drawImage(fogimg, 0, 0, topCanvas.width, topCanvas.height);
+            fog_flag = true;
+          }
+        }else {}
+      }
+
+      //전체 안개효과를 없엠
+      function fogClear(){
+        fog_flag = false;
+        topCtx.clearRect(0,0,topCanvas.width,topCanvas.height);
+      }
+
+
+      //전체화면으로 사이즈가 바뀔때 캔버스(안개효과)의 크기 조절
+      function resize(){
+        fullScreen_flag = true;
+        topCanvas.width = $("#myvideo").width();
+        topCanvas.height = $("#myvideo").height() -30 ;
+
+        if (fog_flag == true) {
+          fog_flag = false;
+          foggy();
+        }
+      }
+
+      //서버로 room 정보 보내기
+      socket.emit("join",{
+        roomid : room_id
+      }) ;
+
+
+      function sendInterInfo(){
+        textCanvas.style.zIndex="10";
+        ctx.font = '30px 궁서';
+        ctx.fillStyle = "white";
+        ctx.fillText('핸드폰 마이크에 후하고 불어주세요.', $("#myvideo").width()/5+140, $("#myvideo").height()/2);
+
+        //서버로 인터렉션 정보(interactionID) 전송
+        socket.emit("inter_info", {
+          interactionID : "actFog01"
+        });
+      }
+
+      //서버로 비디오 정보 보내기
+      function sendVideoInfo(){
+        //가로, 세로, 인터렉션 정보
+        socket.emit("video_info", {
+          width : $("#myvideo").width(),
+          height : $("#myvideo").height() -30,
+          interactionID : "actFog02"
+        });
+      }
+
+      //서버에서 센서 정보 받기
+      function sensor(){
+        socket.on("sensor", function(data){
+          mic_flag = data.micFog;
+          //micFog값이 true이면 foggy(), sendVideoInfo()호출
+          if (data.micFog === "true") {
+            textCanvas.style.zIndex="-1";
+            foggy();
+            sendVideoInfo();
+          }
+          //터치 입력값 대로 안개효과 지우기
+          topCtx.clearRect(data.touchX-25, data.touchY-25, 200, 200);
+
+          //안개효과가 있을 때
+          if(fog_flag == true){
+            //지워진영역의 퍼센트를 알 수 있는 clearPercent() 호출
+            clearPercent();
+            console.log("per : " + percentage);
+
+            //안개효과가 지워진 부분이 60% 이상일때
+            if(percentage > 60){
+              //영상재생, 전체 안개효과 지우기
+              videocontrol.play();
+              fogClear();
+            }
+            else{
+            }
+          }
+        });
+      }
+
+      //안개효과가 지워진 영역의 퍼센트 구하기
+      function clearPercent(){
+        //캔버스에 있는 이미지의 화소 데이터 얻기
+        var imgData = topCtx.getImageData(0, 0, topCanvas.width, topCanvas.height).data;
+        //R,G,B,A 값으로 얻어진 imgData의 크기를 4로 나누어 A에 대한 갯수만
+        var numberOfPixels = imgData.length / 4;
+        //투명해진 부분만큼 카운트 할 변수
+        var transparent = 0;
+
+        //imgData의 알파값(4번째 값)에만 접근하여
+        for (var i = 0; i < imgData.length; i+=4) {
+          //imgData[i]가 투명한 경우
+          if(imgData[i] == 0){
+            //카운트
+            transparent += 1;
+          }
+          else {
+            transparent +=0;
+          }
+        }
+        //퍼센트로 나타냄
+        percentage = transparent / numberOfPixels * 100;
+      }
+
+    </script>
+
+    <button type="button" class="btn" style="position:absolute; left:600px; top:740px;">
+      <a href="http://192.168.187.74:3002/main">MAIN </a></button>
+
+  </body>
+</html>

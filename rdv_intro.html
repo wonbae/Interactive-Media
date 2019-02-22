@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>intro</title>
+  <link href="http://vjs.zencdn.net/6.2.0/video-js.css" rel="stylesheet">
+    <script src="http://vjs.zencdn.net/6.2.0/video.js"></script>
+    <!-- If you'd like to support IE8 -->
+    <script src="http://vjs.zencdn.net/ie8/1.1.2/videojs-ie8.min.js"></script>
+  <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <!-- 비디오 위에 올라가는 text와 이미지의 css Style이다 상대적으로 반응형으로 안햇다 이딴식으로 하면 안된다. -->
+    <style>
+      .left_text{
+        position: absolute;
+        left: 250px;
+        top: 50%;
+        width: 100%;
+        /*text-align: center;*/
+        font-size: 30px;
+        color: white;
+      }
+      .right_text{
+        position: absolute;
+        left: 800px;
+        top: 50%;
+        width: 100%;
+        /*text-align: center;*/
+        font-size: 30px;
+        color: white;
+      }
+      .left_img{
+        position: absolute;
+        left: 110px;
+        top: 200px;
+        z-index: -3;
+        opacity:0.5;
+      }
+      .right_img{
+        position: absolute;
+        left: 650px;
+        top: 200px;
+        z-index: -3;
+        opacity:0.5;
+      }
+
+    </style>
+</head>
+<body>
+<p> 영상이 다 끝난 후 화면을 선택해주세요</p>
+<button id="_rdv">move to rdv</button>
+<button id="_rdvnow">move to rdvnow</button>
+
+<!-- 비니오 위에 올라가는 왼쪽, 오른쪽 이미지를 div로 묶어 들고있다.-->
+<div id="img_div">
+
+      <!-- 이미지 테그를 <a></a>로 묶으면 이미지를 클릭 시 다음 경로로 이동 할 수 있다
+      opacity는 투명도를 조절
+      onmouseover는 마우르를 이미지에 올리면 opacity를 조절하게 해준다
+       -->
+      <a href="rdv"><img id="left_img" class="left_img" width="540" height="458" src="terminal_left.png" opacity:1; onmouseover="this.style.opacity='0.5'" onmouseout="this.style.opacity=1"></a>
+      <div class="left_text">곽도원(김승현) 찾으러가기</div>
+
+
+      <a href="rdv_nowposition"><img id="right_img" class="right_img" width="540" height="458" src="terminal_right.png" border="0" onmouseover="this.style.opacity='0.5'" onmouseout="this.style.opacity=1"></a>
+      <div class="right_text">내 위치로 찾으러가기</div>
+</div>
+
+<!-- 비디오 부분
+autoplay 로 페이지가 로드 되자마자 실행된다.
+html video tag로만 사용하는 것이 아니라 video-js support를 추가해서 사용한다. -->
+  <div id="intro_div">
+    <video id="intro" width="1280px" height="720px" class="video-js" controls preload="auto" data-setup="{}"  autoplay>
+
+      <source id="intro_Video" style="position:absolute; width:1280px;height:720px;" src="rdv_intro.mp4" type="video/mp4">
+
+        <p class="vjs-no-js">
+        To view this video please enable JavaScript, and consider upgrading to a web browser that
+        <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+      </p>
+    </video>
+  </div>
+      <button type="button" class="btn" style="position:absolute; left:600px; top:800px;"> <a href="http://192.168.187.74:3002/main">MAIN </a></button>
+  </body>
+
+<!-- JavaScript 실행시작 부분
+      js 부분에서 html의 videotag, style, image 프로퍼티 에트리뷰트를 바꾸는 부분이다. -->
+<script type="text/javascript"></script>
+<script>
+// intro는 videotag의 id와 동일, document.getElementById이거로
+// video의 element를 컨트롤 할 수 있다.
+var YellowSeaVideo_intro = document.getElementById('intro');
+
+//error: 비디오 처음 로드 시 실행이 안되고 새로고치하면 실행되는 경우!
+// videojs에서 임의적으로 id를 바꾸는 경우가 있다. 그럴경우 한번더 박아줌
+if(YellowSeaVideo_intro == null){
+  YellowSeaVideo_intro = document.getElementById('intro');
+}
+
+console.log($(YellowSeaVideo_intro));
+// video tag의 event중에 ended가 있다. 이는  video 가 실행이 끝나면 발생하는  event다
+// 이를 addEventListener로 듣고(감지) 만약 그 비디오의 src가 다음과 같을경우
+// video의 zIndex를 바꿔준다(안보이게 뒤로 보냄(-는 뒤로 +는 사용자에게로))
+// html은 z-index, js는 zIndex 서로 다르
+YellowSeaVideo_intro.addEventListener("ended", function(){
+  if($(YellowSeaVideo_intro).attr('src')=="rdv_intro.mp4"){
+      console.log("video ended");
+      document.getElementById("intro").style.zIndex = "-10";
+
+      document.getElementById("right_img").style.zIndex = "10";
+      document.getElementById("left_img").style.zIndex = "10";
+  }
+},false);
+
+
+$("#_rdv").click(function(){
+  $(location).attr("href","./rdv");
+});
+$("#_rdvnow").click(function(){
+  $(location).attr("href","./rdv_nowposition");
+});
+
+
+</script>
+
+</html>

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Roadview Page</title>
+
+    <link href="http://vjs.zencdn.net/6.2.0/video-js.css" rel="stylesheet">
+    <script src="http://vjs.zencdn.net/6.2.0/video.js"></script>
+    <!-- If you'd like to support IE8 -->
+    <script src="http://vjs.zencdn.net/ie8/1.1.2/videojs-ie8.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+
+</head>
+<body id="body" onload="draw()">
+<!-- 로드뷰에 캔버스를 씌워 어두운 배경을 연출 -->
+<canvas id="myCanvas" width="" height="" style="background-color: rgba( 0, 0, 0, 0.2 ); position:absolute; z-index: 1;">
+</canvas>
+<!--  로드뷰의 크기 사이즈-->
+<div id="roadview" style="position:absolute; width:1280px;height:720px;">
+</div>
+<!-- 비디오 크기 사이즈 타입 경로 아이디 -->
+<div id="video_div" style="position:absolute; width:700px;height:550px;z-index: 5;">
+
+   <video id="YellowSea_Video" width="1280px" height="720px" class="video-js" controls preload="auto" data-setup="{}"  autoplay>
+
+      <source id="rdv_frontVideo" style="position:absolute; width:1280px;height:720px;" src="rdv_frontVideo.mp4" type="video/mp4">
+
+      <source id="rdv_endVideo" style="position:absolute; width:1280px;height:720px;" src="rdv_endVideo.mp4" type="video/mp4">
+
+        <p class="vjs-no-js">
+        To view this video please enable JavaScript, and consider upgrading to a web browser that
+        <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+      </p>
+
+  </video>
+</div>
+<!--  메인으로 가는 버트-->
+<button type="button" class="btn" style="position:absolute; left:600px; top:740px;"> <a href="http://192.168.187.74:3002/main">MAIN </a></button>
+
+</body>
+<script src="http://code.jquery.com/jquery-latest.min.js"></script>
+<script type="text/javascript" src="//apis.daum.net/maps/maps3.js?apikey=64aa0f870b59a3e02b8daa87b4974f97"></script>
+<script src="/socket.io/socket.io.js"></script>
+
+
+
+<script type="text/javascript">
+
+// video tag 의 id 혹은 video tag를 감싸고있는 div id를 가져와 컨트롤
+var YellowSeaVideo = document.getElementById('YellowSea_Video_html5_api');
+
+if(YellowSeaVideo == null) {
+  YellowSeaVideo = document.getElementById('YellowSea_Video') ;
+}
+
+console.log($(YellowSeaVideo)) ;
+// 비디오가 끝나면 이벤트가 발생하고 zIndex변경
+  YellowSeaVideo.addEventListener("ended", function (){
+      console.log($(YellowSeaVideo).attr('src'));
+      if($(YellowSeaVideo).attr('src')=="rdv_frontVideo.mp4"){
+        console.log("RoadView will be run!!");
+        document.getElementById("video_div").style.zIndex = "-3";
+        runRoadView();
+        // 로드뷰 실행 함숭
+      }
+  },false);
+  // RoadviewEnded는 임의로 만든 event함수이다. video tag의 event와는 다르게 로드뷰가 끝난 후 다시 비디오가 실행되야 되기때문
+  YellowSeaVideo.addEventListener("RoadviewEnded",function (){
+    console.log("playVideo will be run");
+    document.getElementById("video_div").style.zIndex = "10";
+    //if($(YellowSeaVideo).attr('src')=="rdv_frontVideo.mp4"){
+      playVideo();
+    //}
+  },false);
+
+// 비디오 경로찾아 자동르로 재생
+  function playVideo(){
+    YellowSeaVideo.src="/rdv_endVideo.mp4";
+    YellowSeaVideo.autoplay=true;
+    YellowSeaVideo.load();
+  }
+
+
+//검은 그림자 그리기
+
+function draw(){
+   var imgClo = new Image();
+
+   //페이지 로드후 이미지가 로드 되었을 때 이미지 출력
+   imgClo.addEventListener('load', function(){
+       //로드된 이미지를 캔버스에 출력
+       var ctx = document.getElementById('myCanvas').getContext("2d");
+       ctx.drawImage( imgClo , $('#roadview').width()/2, 420, 300, 300);
+   },false);
+   //이미지 경로 설정
+   imgClo.src="crm.png";
+}
+// 
+var lat = 37.521324 ;//성당앞 좌표(성당->목표건물앞)
+var lng = 127.038307 ;
+var room_id = sessionStorage.getItem('qr_code_id');
+var roadviewContainer = document.getElementById('roadview'); //로드뷰를 표시하기 위해 
+var roadview = new daum.maps.Roadview(roadviewContainer); //로드뷰 객체
+var roadviewClient = new daum.maps.RoadviewClient(); //좌표로부터 로드뷰 파노ID를 가져올 로드뷰 helper객체
+var position = new daum.maps.LatLng(lat,lng) ;
+//로드뷰 처음좌표를 positon에 담음
+
+var viewpoint = new daum.maps.Viewpoint(50, 10, 0);//처음 시점
+
+//roadview.getViewpointWithPanoId(); // { pan: 30, tilt: -10, zoom: 0, panoId: 1017315916 }
+//로드뷰 시점과 파놀드 를 같이 반환
+
+  /*속터지게도 플레시는 for문이 아먹힌다 오만때만 짓거릴해도...
+      for (var i = 0 ; i < 300; i++) {
+        //viewPointArray[i]=viewpoint.pan+i;//배열에다가 로드뷰의 pan속성을 증가시켜 저장
+        console.log(i);
+        view = viewpoint.pan+i;
+        console.log("this is view: "+view);
+        view2 = roadview.getViewpoint();
+        roadview.setViewpoint({view});
+        //roadview.setViewpoint({view2});
+
+        //view = roadview.getViewpoint();//로드뷰 시점을 반환
+        //roadview.setViewpoint(view);
+      }
+      */
+
+//roadview.setViewpoint() -> 회전하는 시점을 나타낸다.
+//getNearestPanoId() -> 좌표에서 가장가까운 위치를 찾는다
+
+
+//-----------------------성당앞 시점---------------------------
+
+function p1(){
+  roadviewClient.getNearestPanoId(position,50,function(panoId){
+      roadview.setPanoId(panoId,position);
+    });
+  roadview.setViewpoint({pan:20,tilt:-15,zoom:0});
+}
+function p2(){
+  roadviewClient.getNearestPanoId(position,50,function(panoId){
+      roadview.setPanoId(panoId,position);
+    });
+  roadview.setViewpoint({pan:35,tilt:-15,zoom:0});
+}
+function p3(){
+  roadviewClient.getNearestPanoId(position,50,function(panoId){
+      roadview.setPanoId(panoId,position);
+    });
+  roadview.setViewpoint({pan:50,tilt:-15,zoom:0});
+}
+
+function p4(){
+  roadviewClient.getNearestPanoId(position,50,function(panoId){
+      roadview.setPanoId(panoId,position);
+    });
+  roadview.setViewpoint({pan:70,tilt:-15,zoom:0});
+}
+function p5(){
+  roadviewClient.getNearestPanoId(position,50,function(panoId){
+      roadview.setPanoId(panoId,position);
+    });
+  roadview.setViewpoint({pan:80,tilt:-15,zoom:0});
+}
+function p6(){
+  roadviewClient.getNearestPanoId(position,50,function(panoId){
+      roadview.setPanoId(panoId,position);
+
+    });
+  roadview.setViewpoint({pan:95,tilt:-15,zoom:0});
+}
+function p7(){
+  roadviewClient.getNearestPanoId(position,50,function(panoId){
+      roadview.setPanoId(panoId,position);
+    });
+  roadview.setViewpoint({pan:105,tilt:-15,zoom:0});
+}
+
+function p8(){
+  roadviewClient.getNearestPanoId(position,50,function(panoId){
+      roadview.setPanoId(panoId,position);
+    });
+  roadview.setViewpoint({pan:120,tilt:-15,zoom:0});
+}
+function p9(){
+  roadviewClient.getNearestPanoId(position,50,function(panoId){
+      roadview.setPanoId(panoId,position);
+    });
+  roadview.setViewpoint({pan:130,tilt:-15,zoom:0});
+}
+function p10(){
+  roadviewClient.getNearestPanoId(position,50,function(panoId){
+      roadview.setPanoId(panoId,position);
+    });
+  roadview.setViewpoint({pan:145,tilt:-15,zoom:0});
+}
+function p11(){
+  roadviewClient.getNearestPanoId(position,50,function(panoId){
+      roadview.setPanoId(panoId,position);
+    });
+  roadview.setViewpoint({pan:150,tilt:-15,zoom:0});
+}
+function p12(){
+  roadviewClient.getNearestPanoId(position,50,function(panoId){
+      roadview.setPanoId(panoId,position);
+    });
+  roadview.setViewpoint({pan:160,tilt:-16,zoom:0});
+}
+function p13(){
+  roadviewClient.getNearestPanoId(position,50,function(panoId){
+      roadview.setPanoId(panoId,position);
+    });
+  roadview.setViewpoint({pan:175,tilt:-17,zoom:0});
+}
+
+function p14(){
+  roadviewClient.getNearestPanoId(position,50,function(panoId){
+      roadview.setPanoId(panoId,position);
+    });
+  roadview.setViewpoint({pan:185,tilt:-17,zoom:0});
+}
+function p15(){
+  roadviewClient.getNearestPanoId(position,50,function(panoId){
+      roadview.setPanoId(panoId,position);
+    });
+  roadview.setViewpoint({pan:195,tilt:-17,zoom:0});
+}function p16(){
+  roadviewClient.getNearestPanoId(position,50,function(panoId){
+      roadview.setPanoId(panoId,position);
+    });
+  roadview.setViewpoint({pan:205,tilt:-17,zoom:0});
+}function p17(){
+  roadviewClient.getNearestPanoId(position,50,function(panoId){
+      roadview.setPanoId(panoId,position);
+    });
+  roadview.setViewpoint({pan:220,tilt:-19,zoom:0});
+}function p18(){
+  roadviewClient.getNearestPanoId(position,50,function(panoId){
+      roadview.setPanoId(panoId,position);
+    });
+  roadview.setViewpoint({pan:235,tilt:-19,zoom:0});
+}
+function p19(){
+  roadviewClient.getNearestPanoId(position,50,function(panoId){
+      roadview.setPanoId(panoId,position);
+    });
+  roadview.setViewpoint({pan:245,tilt:-19,zoom:0});
+}
+function p20(){
+  roadviewClient.getNearestPanoId(position,50,function(panoId){
+      roadview.setPanoId(panoId,position);
+    });
+  roadview.setViewpoint({pan:250,tilt:-19,zoom:0});
+}
+//-----------------------목표 건물로 이동---------------------------
+
+function a1() {
+  lat = 37.521324 ; lng = 127.038307 ;
+  var positionChange = new daum.maps.LatLng(
+    lat-=0.0000266, lng-=0.0001128) ;
+  roadviewClient.getNearestPanoId(positionChange, 50, function(panoId) {
+    roadview.setPanoId(panoId, positionChange);
+  });
+}
+function a2() {
+  var positionChange = new daum.maps.LatLng(
+    lat -= 0.0000266,lng -= 0.0001128) ;
+  roadviewClient.getNearestPanoId(positionChange, 50, function(panoId) {
+    roadview.setPanoId(panoId, positionChange);
+  });
+}
+function a3() {
+  var positionChange = new daum.maps.LatLng(
+    lat -= 0.0000266,lng -= 0.0001128) ;
+  roadviewClient.getNearestPanoId(positionChange, 50, function(panoId) {
+    roadview.setPanoId(panoId, positionChange);
+  });
+}
+function a4() {
+  var positionChange = new daum.maps.LatLng(
+    lat -= 0.0000266,lng -= 0.0001128) ;
+  roadviewClient.getNearestPanoId(positionChange, 50, function(panoId) {
+    roadview.setPanoId(panoId, positionChange);
+  });
+}
+function a5() {
+  var positionChange = new daum.maps.LatLng(
+    lat -= 0.0000266,lng -= 0.0001128) ;
+  roadviewClient.getNearestPanoId(positionChange, 50, function(panoId) {
+    roadview.setPanoId(panoId, positionChange);
+
+  });
+}
+
+//-----------------------목표 건물 앞 시점이동---------------------------
+
+
+function p21(){
+  var positionChange = new daum.maps.LatLng(lat,lng) ;
+  roadviewClient.getNearestPanoId(positionChange,50,function(panoId){
+      roadview.setPanoId(panoId,positionChange);
+    });
+  roadview.setViewpoint({pan:240,tilt:-25,zoom:0});
+}
+function p22(){
+  var positionChange = new daum.maps.LatLng(lat,lng) ;
+  roadviewClient.getNearestPanoId(positionChange,50,function(panoId){
+      roadview.setPanoId(panoId,positionChange);
+    });
+  roadview.setViewpoint({pan:227,tilt:-35,zoom:0});
+}
+function p23(){
+  var positionChange = new daum.maps.LatLng(lat,lng) ;
+  roadviewClient.getNearestPanoId(positionChange,50,function(panoId){
+      roadview.setPanoId(panoId,positionChange);
+    });
+  roadview.setViewpoint({pan:210,tilt:-35,zoom:0});
+}
+function p24(){
+  var positionChange = new daum.maps.LatLng(lat,lng) ;
+  roadviewClient.getNearestPanoId(positionChange,50,function(panoId){
+      roadview.setPanoId(panoId,positionChange);
+    });
+  roadview.setViewpoint({pan:195,tilt:-40,zoom:0});
+}
+function p25(){
+  var positionChange = new daum.maps.LatLng(lat,lng) ;
+  roadviewClient.getNearestPanoId(positionChange,50,function(panoId){
+      roadview.setPanoId(panoId,positionChange);
+    });
+  roadview.setViewpoint({pan:175,tilt:-50,zoom:0});
+}
+function p26(){
+  var positionChange = new daum.maps.LatLng(lat,lng) ;
+  roadviewClient.getNearestPanoId(positionChange,50,function(panoId){
+      roadview.setPanoId(panoId,positionChange);
+    });
+  roadview.setViewpoint({pan:165,tilt:-50,zoom:1});
+}
+function p27(){
+  var positionChange = new daum.maps.LatLng(lat,lng) ;
+  roadviewClient.getNearestPanoId(positionChange,50,function(panoId){
+      roadview.setPanoId(panoId,positionChange);
+    });
+  roadview.setViewpoint({pan:165,tilt:-60,zoom:3});
+}
+//로드뷰가 끝난 후 발생하는 event 이 이벤트가 발생 후 다음 동영상 재생됨
+function g(){
+  var event  = document.createEvent("HTMLEvents");
+  event.initEvent("RoadviewEnded",true,false);
+  document.getElementById("rdv_frontVideo").dispatchEvent(event);
+}
+function runRoadView() {
+  //시점
+  setTimeout(p1,1000);
+  setTimeout(p2,1500);
+  setTimeout(p3,2000);
+  setTimeout(p4,2500);
+  setTimeout(p5,3000);
+  setTimeout(p6,3500);
+  setTimeout(p7,4000);
+  setTimeout(p8,4500);
+  setTimeout(p9,5000);
+  setTimeout(p10,5500);
+  setTimeout(p11,6000);
+  setTimeout(p12,6500);
+  setTimeout(p13,7000);
+  setTimeout(p14,7500);
+  setTimeout(p15,8000);
+  setTimeout(p16,8500);
+  setTimeout(p17,9000);
+  setTimeout(p18,9500);
+  setTimeout(p19,10000);
+  setTimeout(p20,10500);
+  //이동
+  setTimeout(a1,11000) ;
+  setTimeout(a2,11500) ;
+  setTimeout(a3,12000) ;
+  setTimeout(a4,12500) ;
+  //정지 후 시점
+  setTimeout(p21,14000);
+  setTimeout(p22,14700);
+  setTimeout(p23,15100);
+  setTimeout(p24,15500);
+  setTimeout(p25,15800);//잠깐멈추
+  setTimeout(p26,17200);
+  setTimeout(p27,17600);
+  setTimeout(g,18000);
+
+}
+  /*
+  for(var i=0;i<7000;i+=500){
+  setTimeout(p14(),500+i);
+  console.log('set time out'+i);
+}
+*/
+  /*
+function p14(){
+  roadviewClient.getNearestPanoId(position,50,function(panoId){
+      roadview.setPanoId(panoId,position);
+    });
+  for(var i=0;i<150;i+=10){
+  roadview.setViewpoint({pan:30+i,tilt:-16,zoom:0});
+  console.log(i);
+  setTimeout(p14,500+i);
+}
+}
+
+*/
+
+$(window).resize(function(){
+  myCanvas.width = $('#roadview').width() ;
+  myCanvas.height = $('#roadview').height() ;
+  draw() ;
+}).resize();
+
+</script>
+</html>

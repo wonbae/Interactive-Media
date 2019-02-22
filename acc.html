@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Acceration Page</title>
+    <link href="http://vjs.zencdn.net/6.2.0/video-js.css" rel="stylesheet">
+    <script src="http://vjs.zencdn.net/6.2.0/video.js"></script>
+    <!-- If you'd like to support IE8 -->
+    <script src="http://vjs.zencdn.net/ie8/1.1.2/videojs-ie8.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+</head>
+<body>
+<video id="acc_video" class="video-js" controls preload="auto" data-setup="{}"
+  style="position:absolute; width:1280px;height:720px;">
+  <source id="src_video" src="snipe_before.mp4" type='video/mp4'>
+  <source id="src_success" src="snipe_success.mp4" type='video/mp4'>
+  <source id="src_fail" src="snipe_fail.mp4" type='video/mp4'>
+  <p class="vjs-no-js">
+    To view this video please enable JavaScript, and consider upgrading to a web browser that
+    <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+  </p>
+</video>
+
+  <canvas id="myCanvas" width="1280px" height="720px" style="background-color: rgba( 0, 0, 0, 1.0 ); position:absolute; z-index: -1;">
+  </canvas>
+  <button type="button" class="btn" style="position:absolute; left:600px; top:740px;"> <a href="http://192.168.187.74:3002/main">MAIN </a></button>
+</body>
+
+<script  src="http://code.jquery.com/jquery-latest.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+var room_id = sessionStorage.getItem('qr_code_id');
+var myvideo = document.getElementById('acc_video');
+var myCanvas = document.getElementById('myCanvas');
+var ctx = myCanvas.getContext('2d');
+
+// setTimeout을 이용해서 시간 단위로 움직이는 함수형 변수들 정의
+// failed부터 timer1까지
+
+var failed ;
+var timer9 ;
+var timer8 ;
+var timer7 ;
+var timer6 ;
+var timer5 ;
+var timer4 ;
+var timer3 ;
+var timer2 ;
+var timer1 ;
+var socket = io();
+
+socket.emit("join", {
+  roomid : room_id
+});
+
+    ctx.font = '30px 궁서';
+    ctx.fillStyle = "white";
+    ctx.fillText('10', 10, 30);
+    ctx.fillText('Do Interaction', $("#acc_video").width()/5 + 250, $("#acc_video").height()/2);
+    ctx.fillStyle = "red";
+    ctx.fillText('빨간 네모 안에 총구를 겨누어주세요.', $("#acc_video").width()/5 + 120, $("#acc_video").height()/2+50);
+
+myvideo.addEventListener("ended",endedInfo,false);
+
+function endedInfo() {
+  if($(myvideo).attr('src')=="snipe_before.mp4"){
+
+  socket.emit("acc_ready") ;
+  myCanvas.style.zIndex="1";
+
+  timer9 = setTimeout(function(){
+    ctx.clearRect(0, 0, myCanvas.width, myCanvas.height);
+    ctx.fillStyle = "white";
+    ctx.fillText('9', 10, 30);
+    ctx.fillText('Do Interaction', $("#acc_video").width()/5 + 250, $("#acc_video").height()/2);
+    ctx.fillStyle = "red";
+    ctx.fillText('빨간 네모 안에 총구를 겨누어주세요.', $("#acc_video").width()/5 + 120, $("#acc_video").height()/2+50);
+
+   }, 1000);
+
+   timer8 = setTimeout(function(){
+     ctx.clearRect(0, 0, myCanvas.width, myCanvas.height);
+     ctx.fillStyle = "white";
+     ctx.fillText('8', 10, 30);
+     ctx.fillText('Do Interaction', $("#acc_video").width()/5 + 250, $("#acc_video").height()/2);
+     ctx.fillStyle = "red";
+     ctx.fillText('빨간 네모 안에 총구를 겨누어주세요.', $("#acc_video").width()/5 + 120, $("#acc_video").height()/2+50);
+
+   }, 2000);
+
+    timer7 = setTimeout(function(){
+      ctx.clearRect(0, 0, myCanvas.width, myCanvas.height);
+      ctx.fillStyle = "white";
+      ctx.fillText('7', 10, 30);
+      ctx.fillText('Do Interaction', $("#acc_video").width()/5 + 250, $("#acc_video").height()/2);
+      ctx.fillStyle = "red";
+      ctx.fillText('빨간 네모 안에 총구를 겨누어주세요.', $("#acc_video").width()/5 + 120, $("#acc_video").height()/2+50);
+
+    }, 3000);
+
+     timer6 = setTimeout(function(){
+       ctx.clearRect(0, 0, myCanvas.width, myCanvas.height);
+       ctx.fillStyle = "white";
+       ctx.fillText('6', 10, 30);
+       ctx.fillText('Do Interaction', $("#acc_video").width()/5 + 250, $("#acc_video").height()/2);
+       ctx.fillStyle = "red";
+       ctx.fillText('빨간 네모 안에 총구를 겨누어주세요.', $("#acc_video").width()/5 + 120, $("#acc_video").height()/2+50);
+
+     }, 4000);
+
+      timer5 = setTimeout(function(){
+        ctx.clearRect(0, 0, myCanvas.width, myCanvas.height);
+        ctx.fillStyle = "white";
+        ctx.fillText('5', 10, 30);
+        ctx.fillText('Do Interaction', $("#acc_video").width()/5 + 250, $("#acc_video").height()/2);
+        ctx.fillStyle = "red";
+        ctx.fillText('빨간 네모 안에 총구를 겨누어주세요.', $("#acc_video").width()/5 + 120, $("#acc_video").height()/2+50);
+
+      }, 5000);
+
+      timer4 = setTimeout(function(){
+        ctx.clearRect(0, 0, myCanvas.width, myCanvas.height);
+        ctx.fillStyle = "white";
+        ctx.fillText('4', 10, 30);
+        ctx.fillText('Do Interaction', $("#acc_video").width()/5 + 250, $("#acc_video").height()/2);
+        ctx.fillStyle = "red";
+        ctx.fillText('빨간 네모 안에 총구를 겨누어주세요.', $("#acc_video").width()/5 + 120, $("#acc_video").height()/2+50);
+
+      }, 6000);
+
+      timer3 = setTimeout(function(){
+        ctx.clearRect(0, 0, myCanvas.width, myCanvas.height);
+        ctx.fillStyle = "white";
+        ctx.fillText('3', 10, 30);
+        ctx.fillText('Do Interaction', $("#acc_video").width()/5 + 250, $("#acc_video").height()/2);
+        ctx.fillStyle = "red";
+        ctx.fillText('빨간 네모 안에 총구를 겨누어주세요.', $("#acc_video").width()/5 + 120, $("#acc_video").height()/2+50);
+
+      }, 7000);
+
+      timer2 = setTimeout(function(){
+        ctx.clearRect(0, 0, myCanvas.width, myCanvas.height);
+        ctx.fillStyle = "white";
+        ctx.fillText('2', 10, 30);
+        ctx.fillText('Do Interaction', $("#acc_video").width()/5 + 250, $("#acc_video").height()/2);
+        ctx.fillStyle = "red";
+        ctx.fillText('빨간 네모 안에 총구를 겨누어주세요.', $("#acc_video").width()/5 + 120, $("#acc_video").height()/2+50);
+
+      }, 8000);
+
+      timer1 = setTimeout(function(){
+        ctx.clearRect(0, 0, myCanvas.width, myCanvas.height);
+        ctx.fillStyle = "white";
+        ctx.fillText('1', 10, 30);
+        ctx.fillText('Do Interaction', $("#acc_video").width()/5 + 250, $("#acc_video").height()/2);
+        ctx.fillStyle = "red";
+        ctx.fillText('빨간 네모 안에 총구를 겨누어주세요.', $("#acc_video").width()/5 + 120, $("#acc_video").height()/2+50);
+
+      }, 9000);
+
+      failed = setTimeout(function(){
+        ctx.clearRect(0, 0, myCanvas.width, myCanvas.height);
+        ctx.fillStyle = "white";
+        ctx.fillText('0', 10, 30);
+        ctx.fillText('Do Interaction', $("#acc_video").width()/5 + 250, $("#acc_video").height()/2);
+        ctx.fillStyle = "red";
+        ctx.fillText('빨간 네모 안에 총구를 겨누어주세요.', $("#acc_video").width()/5 + 120, $("#acc_video").height()/2+50);
+
+        socket.emit("acc_timeout") ;
+
+        ctx.clearRect(0, 0, myCanvas.width, myCanvas.height);
+        ctx.fillStyle = "white";
+        ctx.fillText('Interaction Fail', $("#acc_video").width()/5 + 250, $("#acc_video").height()/2);
+        socket.emit("acc_timeout") ;
+
+        // 실패한 액션 영상을 보여준다.
+        setTimeout(function(){
+          myCanvas.style.zIndex="-1";
+          myvideo.src="/snipe_fail.mp4";
+          myvideo.load();
+          myvideo.autoplay=true;
+        }, 1000);
+      }, 10000);
+    }
+}
+
+$(function() {
+  // 서버로부터의 sensor메시지가 수신되고 acceration액션이 true라고 수신되면 failed부터 timer9까지의 setTimeout을 clear한다.
+  // 성공한 액션 영상을 보여준다.
+  socket.on("sensor", function(data) {
+      if(data.acc=="true") {
+        clearTimeout(failed) ;
+        clearTimeout(timer2) ;
+        clearTimeout(timer3) ;
+        clearTimeout(timer4) ;
+        clearTimeout(timer5) ;
+        clearTimeout(timer6) ;
+        clearTimeout(timer7) ;
+        clearTimeout(timer8) ;
+        clearTimeout(timer9) ;
+
+        ctx.clearRect(0, 0, myCanvas.width, myCanvas.height);
+        ctx.fillStyle = "white";
+        ctx.fillText('Interaction Success', $("#acc_video").width()/5 -40, $("#acc_video").height()/2);
+
+        setTimeout(function(){
+          myCanvas.style.zIndex="-1";
+          myvideo.src="/snipe_success.mp4";
+          myvideo.load();
+          myvideo.autoplay=true;
+        }, 3000);
+      }
+    });
+});
+</script>
+
+</html>
